@@ -1,0 +1,68 @@
+\begin{algorithm}[!hbt]
+\caption{Our parallel Dynamic Frontier (DF*) PageRank.}
+\label{alg:frontier}
+\begin{algorithmic}[1]
+\Require{$G^{t-1}, G^t$: Previous, current input graph}
+\Require{$\Delta^{t-}, \Delta^{t+}$: Edge deletions and insertions (input)}
+\Require{$R^{t-1}, R$: Previous, current rank vector}
+\Ensure{$\Delta r$: Change in rank of a vertex}
+\Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
+\Ensure{$\tau, \tau_f, \tau_p$: Iteration, frontier, prune tolerance}
+\Ensure{$\alpha$: Damping factor}
+
+\Statex
+
+\Function{dynamicFrontier}{$G^{t-1}, G^t, \Delta^{t-}, \Delta^{t+}, R^{t-1}$}
+  \State $R \gets R^{t-1}$ \label{alg:frontier--initialize}
+  \State $\rhd$ Mark initial affected
+  \ForAll{$(u, v) \in \Delta^{t-} \cup \Delta^{t+} \textbf{in parallel}$} \label{alg:frontier--mark-begin}
+    \ForAll{$v' \in (G^{t-1} \cup G^t).out(u)$}
+    \State Mark $v'$ as affected
+    \EndFor
+  \EndFor \label{alg:frontier--mark-end}
+  \ForAll{$i \in [0 .. MAX\_ITERATIONS)$} \label{alg:frontier--compute-begin}
+    \State $\Delta R \gets 0$ \textbf{;} $C_0 \gets (1 - \alpha)/|V^t|$
+    \ForAll{affected $v \in V^t$ \textbf{in parallel}}
+      \State $c \gets 0$ \textbf{;} $d \gets |G^t.out(v)|$
+      \ForAll{$u \in G^t.in(v)$}
+        \State $c \gets c + R[u] / |G^t.out(u)|$
+      \EndFor
+      \If{\textbf{is \textit{DF-P}}} \label{alg:frontier--formula-begin}
+        \State $r \gets 1/(1 - \alpha/d) * (C_0 + \alpha * (c - R[v]/d))$
+      \Else
+        \State $r \gets C_0 + \alpha * c$
+      \EndIf \label{alg:frontier--formula-end}
+      \State $\Delta r \gets |r - R[v]|$ \textbf{;} $\Delta R \gets \max(\Delta R, \Delta r)$
+      \State $\rhd$ Prune $v$ if its relative rank change is small
+      \If{\textbf{is \textit{DF-P} and} $\Delta r / \max(r, R[v]) \leq \tau_p$}
+        \State Mark $v$ as not affected
+      \EndIf
+      \State $\rhd$ Expand frontier if relative rank change is large
+      \If{$\Delta r / \max(r, R[v]) > \tau_f$} \label{alg:frontier--remark-begin}
+        \ForAll{$v' \in G^t.out(v)$}
+          \State Mark $v'$ as affected
+        \EndFor
+      \EndIf \label{alg:frontier--remark-end}
+      \State $\rhd$ Update rank of $v$
+      \State $R[v] \gets r$
+    \EndFor
+    \State $\rhd$ Ranks converged?
+    \If{$\Delta R \le \tau$} \textbf{break}
+    \EndIf
+  \EndFor \label{alg:frontier--compute-end}
+  \State \ReturnInline{$R$} \label{alg:frontier--return}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
+
+
+
+
+%% Requires (parameters):
+% G(V, E): a directed unweighted graph
+% R: initial ranks (1/N for static)
+
+%% Parameter values:
+% MAX\_ITERATIONS = 500
+% DAMPING\_FACTOR = 0.85
+% TOLERANCE = 10^-10
