@@ -1,0 +1,37 @@
+\begin{algorithm}[!hbt]
+\caption{Parallel vertex partitioning by degree.}
+\label{alg:partition}
+\begin{algorithmic}[1]
+\Require{$G(V, E)$: Input graph}
+\Ensure{$D_P$: Maximum degree of a low-degree vertex}
+\Ensure{$B_k$: Temporary buffer used for partitioning}
+\Ensure{$P$: Partitioned vertex IDs (low-degree vertices first) }
+\Ensure{$N_P$: Number of vertices with low degree}
+
+\Statex
+
+\Function{partition}{$G$}
+  \State $P \gets B_k \gets \{\}$
+  \State $\rhd$ Populate vertex IDs with degree $\leq D_P$
+  \ForAll{$u \in V$ \textbf{in parallel}}
+    \State $B_k[u] \gets |G.out(u)| \leq D_P$
+  \EndFor
+  \State $B_k[|V|] \gets 0$
+  \State $exclusiveScan(B_k)$ \textbf{;} $N_P \gets B_k[|V|]$
+  \ForAll{$u \in V$ \textbf{in parallel}}
+    \If{$|G.out(u)| \leq D_P$} $P[B_k[u]] \gets u$
+    \EndIf
+  \EndFor
+  \State $\rhd$ Populate vertex IDs with degree $> D_P$
+  \ForAll{$u \in V$ \textbf{in parallel}}
+    \State $B_k[u] \gets |G.out(u)| > D_P$
+  \EndFor
+  \State $exclusiveScan(B_k)$
+  \ForAll{$u \in V$ \textbf{in parallel}}
+    \If{$|G.out(u)| > D_P$} $P[N_P + B_k[u]] \gets u$
+    \EndIf
+  \EndFor
+  \State \ReturnInline{$\{P, N_P\}$} \label{alg:partition--return}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
