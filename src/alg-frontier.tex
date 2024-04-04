@@ -1,10 +1,10 @@
 \begin{algorithm}[!hbt]
-\caption{\su{Our} parallel Dynamic Frontier (DF*) PageRank.}
+\caption{Our GPU-based Dynamic Frontier (DF*) PageRank.}
 \label{alg:frontier}
 \begin{algorithmic}[1]
-\Require{$G^{t-1}, G^t$: Previous, current input graph}
+\Require{$G^t(V^t, E^t), G^{t'}$: Current input graph, and its transpose}
 \Require{$\Delta^{t-}, \Delta^{t+}$: Edge deletions and insertions (input)}
-\Require{$R^{t-1}, R$: Previous, current rank vector}
+\Require{$R^{t-1}, R, R_{new}$: Previous, current rank vectors}
 \Ensure{$\Delta r$: Change in rank of a vertex}
 \Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
 \Ensure{$\tau, \tau_f, \tau_p$: Iteration, frontier, prune tolerance}
@@ -12,24 +12,62 @@
 
 \Statex
 
-\Function{dynamicFrontier}{$G^t, G^{t\ (T)}, \Delta^{t-}, \Delta^{t+}, R^{t-1}$}
+\Function{dynamicFrontier}{$G^t, G^{t'}, \Delta^{t-}, \Delta^{t+}, R^{t-1}$}
+  \State $\rhd$ Initialize ranks
   \State $R \gets R_{new} \gets R^{t-1}$ \label{alg:frontier--initialize}
   \State $\rhd$ Partition vertex IDs by out- and in-degree 
-  \State $\{P, N_P\} \gets partition(G^t, D_P)$
-  \State $\{P^T, N^T_P\} \gets partition(G^{t\ (T)}, D_P)$
-  \State $\rhd$ Mark initial affected
+  \State $\{P, N_P\} \gets partition(G^t)$
+  \State $\{P', N'_P\} \gets partition(G^{t'})$
+  \State $\rhd$ Mark initial set of affected vertices
   \State $\{V_A, N_A\} \gets initialAffected(G^t, \Delta^{t-}, \Delta^{t+})$
-  \State $expandAffected(V_A, N_A, G^t, P, N_P, P^T, N^T_P)$
+  \State $expandAffected(V_A, N_A, G^t, P, N_P)$
   \State $\rhd$ Perform PageRank iterations
   \ForAll{$i \in [0 .. MAX\_ITERATIONS)$} \label{alg:frontier--compute-begin}
     \State $N_A \gets \{\}$
-    \State $updateRanks(V_A, N_A, R_{new}, R, G^{t (T)}, P^T, N^T_P)$
+    \State $updateRanks(V_A, N_A, R_{new}, R, G^t, P', N'_P)$
     \State $\Delta R \gets l_{\infty}NormDelta(R_{new}, R)$ \textbf{;} $swap(R_{new}, R)$
     \If{$\Delta R \leq \tau$} \textbf{break}
     \EndIf
-    \State $expandAffected(V_A, N_A, G^t, P, N_P, P^T, N^T_P)$
+    \State $expandAffected(V_A, N_A, G^t, P, N_P)$
   \EndFor \label{alg:frontier--compute-end}
   \State \ReturnInline{$R$} \label{alg:frontier--return}
+\EndFunction
+
+\Statex
+
+\Function{updateRanks}{$V_A, N_A, R_{new}, R, G^t, P', N'_P$}
+  \State $\rhd$ A thread-per-vertex kernel
+  \ForAll{$i \in [0, N'_P)$ \textbf{in parallel$_{thread/V}$}}
+    \State $v \gets P'[i]$
+    \If{\textbf{not} $\delta_V[v]$} \textbf{continue}
+    \EndIf
+      \State $c \gets 0$ \textbf{;} $d \gets |G^t.out(v)|$
+      \State $C_0 \gets (1 - \alpha)/|V^t|$
+      \ForAll{$u \in G^t.in(v)$}
+        \State $c \gets c + R[u] / |G^t.out(u)|$
+      \EndFor
+      \If{\textbf{is \textit{DF-P}}} \label{alg:frontier--formula-begin}
+        \State $r \gets 1/(1 - \alpha/d) * (C_0 + \alpha * (c - R[v]/d))$
+      \Else
+        \State $r \gets C_0 + \alpha * c$
+      \EndIf \label{alg:frontier--formula-end}
+      \State $\Delta r \gets |r - R[v]|$
+      \State $\rhd$ Prune $v$ if its relative rank change is small
+      \If{\textbf{is \textit{DF-P} and} $\Delta r / \max(r, R[v]) \leq \tau_p$}
+        \State $\delta_V[v] \gets 0$
+      \EndIf
+      \State $\rhd$ Expand frontier if relative rank change is large
+      \If{$\Delta r / \max(r, R[v]) > \tau_f$} \label{alg:frontier--remark-begin}
+        \State $\delta_N[v] \gets 0$
+      \EndIf
+      \State $\rhd$ Update rank of $v$
+      \State $R[v] \gets r$
+  \EndFor
+  \State $\rhd$ Similarly with block-per-vertex kernel
+  \State $\rhd$ (using block-reduce, requires shared memory)
+  \ForAll{$i \in [N'_P, |V^t|)$ \textbf{in parallel$_{block/V}$}}
+    \State $\cdots$
+  \EndFor
 \EndFunction
 \end{algorithmic}
 \end{algorithm}

@@ -13,22 +13,22 @@
 \Function{partition}{$G$}
   \State $P \gets B_k \gets \{\}$
   \State $\rhd$ Populate vertex IDs with degree $\leq D_P$
-  \ForAll{$u \in V$ \textbf{in parallel}}
-    \State $B_k[u] \gets |G.out(u)| \leq D_P$
+  \ForAll{$v \in V$ \textbf{in parallel}}
+    \State $B_k[v] \gets |G.out(v)| \leq D_P$
   \EndFor
   \State $B_k[|V|] \gets 0$
   \State $exclusiveScan(B_k)$ \textbf{;} $N_P \gets B_k[|V|]$
-  \ForAll{$u \in V$ \textbf{in parallel}}
-    \If{$|G.out(u)| \leq D_P$} $P[B_k[u]] \gets u$
+  \ForAll{$v \in V$ \textbf{in parallel}}
+    \If{$|G.out(v)| \leq D_P$} $P[B_k[v]] \gets v$
     \EndIf
   \EndFor
   \State $\rhd$ Populate vertex IDs with degree $> D_P$
-  \ForAll{$u \in V$ \textbf{in parallel}}
-    \State $B_k[u] \gets |G.out(u)| > D_P$
+  \ForAll{$v \in V$ \textbf{in parallel}}
+    \State $B_k[v] \gets |G.out(v)| > D_P$
   \EndFor
   \State $exclusiveScan(B_k)$
-  \ForAll{$u \in V$ \textbf{in parallel}}
-    \If{$|G.out(u)| > D_P$} $P[N_P + B_k[u]] \gets u$
+  \ForAll{$v \in V$ \textbf{in parallel}}
+    \If{$|G.out(v)| > D_P$} $P[N_P + B_k[v]] \gets v$
     \EndIf
   \EndFor
   \State \ReturnInline{$\{P, N_P\}$} \label{alg:partition--return}

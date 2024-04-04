@@ -2,24 +2,44 @@
 \caption{Parallel marking of affected vertices.}
 \label{alg:affected}
 \begin{algorithmic}[1]
-\Require{$G(V, E)$: Input graph}
-\Ensure{$D_P$: Maximum degree of a low-degree vertex}
-\Ensure{$B_k$: Temporary buffer used for partitioning}
-\Ensure{$P$: Partitioned vertex IDs (low-degree vertices first) }
-\Ensure{$N_P$: Number of vertices with low degree}
+\Require{$G^t(V^t, E^t)$: Current input graph}
+\Require{$\Delta^{t-}, \Delta^{t+}$: Edge deletions and insertions (input)}
+\Require{$\delta_V$: Flags indicating if each vertex is affected}
+\Require{$\delta_N$: Flags indicating if the neighbor of each vertex is affected}
+\Require{$P$: Partitioned vertex IDs (low-degree vertices first) }
+\Require{$N_P$: Number of vertices with low degree}
 
 \Statex
 
-\Function{extendAffected}{$V_A, N_A, G, P, N_P$}
-  \ForAll{$i \in [0, N_P)$ \textbf{in parallel (thread$_{/V}$)}}
+\Function{initialAffected}{$G^t, \Delta^{t-}, \Delta^{t+}$}
+  \State $N_D \gets |\Delta^{t-}|$ \textbf{;} $N_I \gets |\Delta^{t+}|$
+  \State $\rhd$ For edge deletions
+  \ForAll{$i \in [0, N_D)$ \textbf{in parallel}}
+    \State $u \gets \Delta^{t-}[i].source$
+    \State $v \gets \Delta^{t-}[i].target$
+    \State $\delta_N[u] \gets 1$
+    \State $\delta_V[v] \gets 1$
+  \EndFor
+  \State $\rhd$ For edge insertions
+  \ForAll{$i \in [0, N_I)$ \textbf{in parallel}}
+    \State $u \gets \Delta^{t+}[i].source$
+    \State $\delta_N[u] \gets 1$
+  \EndFor
+  \Return{$\{\delta_V, \delta_N\}$}
+\EndFunction
+
+\Statex
+
+\Function{expandAffected}{$\delta_V, \delta_N, G^t, P, N_P$}
+  \State $\rhd$ A thread-per-vertex kernel
+  \ForAll{$i \in [0, N_P)$ \textbf{in parallel$_{thread/V}$}}
     \State $u \gets P[i]$
-    \If{$N_A[u]$} $markNeighbors(V_A, G, u, 0, 1)$
+    \If{$\delta_N[u]$} $markNeighbors(\delta_V, G^t, u)$
     \EndIf
   \EndFor
-  \ForAll{$i \in [N_P, |V|)$ \textbf{in parallel (block$_{/V}$)}}
-    \State $u \gets P[i]$
-    \If{$N_A[u]$} $markNeighbors(V_A, G, u, th_{idx}, |blk|)$
-    \EndIf
+  \State $\rhd$ Similarly with block-per-vertex kernel
+  \ForAll{$i \in [N_P, |V^t|)$ \textbf{in parallel$_{block/V}$}}
+    \State $\cdots$
   \EndFor
 \EndFunction
 \end{algorithmic}
