@@ -6,17 +6,11 @@
 \Require{$\Delta^{t-}, \Delta^{t+}$: Edge deletions and insertions (input)}
 \Require{$R^{t-1}$: Previous rank vector}
 \Require{$R, R_{new}$: Rank vector in the previous, current iteration}
-\Ensure{$\Delta r$: Change in rank of a vertex}
-\Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
-\Ensure{$\tau, \tau_f, \tau_p$: Iteration, frontier, prune tolerance}
-\Ensure{$\alpha$: Damping factor}
 \Ensure{$\delta_V, \delta_N$: Is a vertex, or neighbors of a vertex affected}
-\Require{$P, P'$: Partitioned vertex IDs --- low out-, in-degree first }
-\Require{$N_P, N'_P$: Number of vertices with low out-, in-degree}
-\Ensure{$\Delta r$: Change in rank of a vertex}
+\Ensure{$P, P'$: Partitioned vertex IDs --- low out-, in-degree first }
+\Ensure{$N_P, N'_P$: Number of vertices with low out-, in-degree}
 \Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
-\Ensure{$\tau, \tau_f, \tau_p$: Iteration, frontier, prune tolerance}
-\Ensure{$\alpha$: Damping factor}
+\Ensure{$\tau$: Iteration tolerance}
 
 \Statex
 
