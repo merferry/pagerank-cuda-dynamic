@@ -9,7 +9,7 @@ Unfortunately, multicore CPUs have limited memory bandwidth and parallelism, mak
 
 \paragraph{Copying data to the device:}
 
-A GPU has its own memory that supports a high volume of data transfers. Accordingly, we\ignore{first} copy the Compressed Sparse Row (CSR) representation of the current graph $G^t$, its transpose $G^{t\ (T)}$, the previous ranks of each vertex $R^{t-1}$, and the batch update consisting of edge deletions $\Delta^{t-}$ (both source and target vertex IDs in separate arrays) and edge insertions $\Delta^{t+}$ (source vertex IDs only). The CSR of $G^{t\ (T)}$ is used for computing PageRank scores, while that of $G^t$ is used for the initial and incremental marking of affected vertices. Note that we only need the source vertex IDs of edge insertions $(u, v) \in \Delta^{t+}$ as we only need to mark the outgoing neighbors of $u$ as affected. On the other hand, for edge deletions $(u, v) \in \Delta^{t-}$, we need both the source and target vertex IDs as we need to mark both the outgoing neighbors of $u$ and the target vertices of the edge deletions, i.e., $v$, as affected.
+A GPU has its own memory that supports a high volume of data transfers. Accordingly, we\ignore{first} copy the Compressed Sparse Row (CSR) representation of the current graph $G^t$, its transpose $G^{t'}$, the previous ranks of each vertex $R^{t-1}$, and the batch update consisting of edge deletions $\Delta^{t-}$ (both source and target vertex IDs in separate arrays) and edge insertions $\Delta^{t+}$ (source vertex IDs only). The CSR of $G^{t'}$ is used for computing PageRank scores, while that of $G^t$ is used for the initial and incremental marking of affected vertices. Note that we only need the source vertex IDs of edge insertions $(u, v) \in \Delta^{t+}$ as we only need to mark the outgoing neighbors of $u$ as affected. On the other hand, for edge deletions $(u, v) \in \Delta^{t-}$, we need both the source and target vertex IDs as we need to mark both the outgoing neighbors of $u$ and the target vertices of the edge deletions, i.e., $v$, as affected.
 
 \paragraph{Partitioning vertices into low-degree and high-degree sets:}
 
@@ -76,6 +76,7 @@ For $\Delta r$ and $\Delta r/d$, we adjust $\tau_f$ from $\tau$ to $\tau/10^5$; 
 
 \input{src/fig-adjust-partition}
 \input{src/alg-frontier}
+\input{src/alg-update}
 \input{src/alg-partition}
 \input{src/alg-affected}
 
