@@ -11,35 +11,35 @@
 \Statex
 
 \Function{initialAffected}{$G^t, \Delta^{t-}, \Delta^{t+}$}
-  \State $N_D \gets |\Delta^{t-}|$ \textbf{;} $N_I \gets |\Delta^{t+}|$
+  \State $N_D \gets |\Delta^{t-}|$ \textbf{;} $N_I \gets |\Delta^{t+}|$ \label{alg:affected--iinitialize}
   \State $\rhd$ For edge deletions
-  \ForAll{$i \in [0, N_D)$ \textbf{in parallel}}
+  \ForAll{$i \in [0, N_D)$ \textbf{in parallel}} \label{alg:affected--idel-begin}
     \State $u \gets \Delta^{t-}[i].source$
     \State $v \gets \Delta^{t-}[i].target$
     \State $\delta_N[u] \gets 1$
     \State $\delta_V[v] \gets 1$
-  \EndFor
+  \EndFor \label{alg:affected--idel-end}
   \State $\rhd$ For edge insertions
-  \ForAll{$i \in [0, N_I)$ \textbf{in parallel}}
+  \ForAll{$i \in [0, N_I)$ \textbf{in parallel}} \label{alg:affected--iins-begin}
     \State $u \gets \Delta^{t+}[i].source$
     \State $\delta_N[u] \gets 1$
-  \EndFor
-  \Return{$\{\delta_V, \delta_N\}$}
+  \EndFor \label{alg:affected--iins-end}
+  \Return{$\{\delta_V, \delta_N\}$} \label{alg:affected--ireturn}
 \EndFunction
 
 \Statex
 
 \Function{expandAffected}{$\delta_V, \delta_N, G^t, P, N_P$}
   \State $\rhd$ A thread-per-vertex kernel
-  \ForAll{$i \in [0, N_P)$ \textbf{in parallel$_{thread/V}$}}
+  \ForAll{$i \in [0, N_P)$ \textbf{in parallel$_{thread/V}$}} \label{alg:affected--ethread-begin}
     \State $u \gets P[i]$
-    \If{$\delta_N[u]$} $markNeighbors(\delta_V, G^t, u)$
+    \If{$\delta_N[u]$} $markNeighbors(\delta_V, G^t, u)$ \label{alg:affected--etmark}
     \EndIf
-  \EndFor
+  \EndFor \label{alg:affected--ethread-end}
   \State $\rhd$ Similarly with block-per-vertex kernel
-  \ForAll{$i \in [N_P, |V^t|)$ \textbf{in parallel$_{block/V}$}}
+  \ForAll{$i \in [N_P, |V^t|)$ \textbf{in parallel$_{block/V}$}} \label{alg:affected--eblock-begin}
     \State $\cdots$
-  \EndFor
+  \EndFor \label{alg:affected--eblock-end}
 \EndFunction
 \end{algorithmic}
 \end{algorithm}

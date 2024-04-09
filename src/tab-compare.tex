@@ -1,0 +1,16 @@
+\begin{table}[hbtp]
+  \centering
+  \caption{List of 5 real-world dynamic graphs, obtained from the Stanford Large Network Dataset Collection \cite{snapnets}. Here, $|V|$ is the number of vertices, $|E_T|$ the number of temporal edges, and $|E|$ the number of static edges (with no duplicates).}
+  \label{tab:compare}
+  \begin{tabular}{|l||c|}
+    \toprule
+    \textbf{PageRank approach} &
+    \textbf{Speedup of DF-P} \\
+    \midrule
+    Static \cite{rank-page99} & $2.1\times$, $3.1\times$ \\ \hline
+    Naive-dynamic (ND) \cite{rank-page99, rank-zhang17} & $1.5\times$, $1.7\times$ \\ \hline
+    Dynamic Traversal (DT) \cite{rank-desikan05, kim2015incremental, rank-giri20, sahu2022dynamic} & $1.8\times$, $13.1\times^*$ \\ \hline
+    Dynamic Frontier (DF) \cite{sahu2024df} & $2.1\times$ $1.3\times^*$ \\ \hline
+  \bottomrule
+  \end{tabular}
+\end{table}

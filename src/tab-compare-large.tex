@@ -1,0 +1,23 @@
+\begin{table}[hbtp]
+  \centering
+  \caption{List of 5 real-world dynamic graphs, obtained from the Stanford Large Network Dataset Collection \cite{snapnets}. Here, $|V|$ is the number of vertices, $|E_T|$ the number of temporal edges, and $|E|$ the number of static edges (with no duplicates).}
+  \label{tab:compare-large}
+  \begin{tabular}{|c|c||c|}
+    \toprule
+    \textbf{PageRank implementation} &
+    \textbf{Published} &
+    \textbf{Our Speedup} \\
+    \midrule
+    Hornet \cite{busato2018hornet} & 2018$^\#$ & $31\times$ \\ \hline
+    Gunrock \cite{wang2016gunrock} & 2016$^\#$ & $5.9\times$ \\ \hline
+    Galois with Gluon \cite{dathathri2018gluon} & 2018 & $448\times^*$ \\ \hline
+    Tigr \cite{nodehi2018tigr} & 2018 & $40\times^*$ \\ \hline
+    Grus \cite{wang2021grus} & 2021 & $7.2\times^*$ \\ \hline
+    Atos \cite{chen2022atos} & 2022 & $7.6\times^*$ \\ \hline
+    Multi-GPU Atos ($1$ GPU) \cite{chen2022scalable} & 2022 & $7.8\times^*$ \\ \hline
+    Multi-GPU Atos ($4$ GPUs) \cite{chen2022scalable} & 2022 & $4.8\times^*$ \\ \hline
+    GraphBLAST \cite{yang2022graphblast} & 2022 & $11\times^*$ \\ \hline
+    Meerkat \cite{concessao2023meerkat} & 2023 & $18\times^*$ \\ \hline
+  \bottomrule
+  \end{tabular}
+\end{table}

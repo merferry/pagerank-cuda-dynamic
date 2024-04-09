@@ -11,26 +11,26 @@
 \Statex
 
 \Function{partition}{$G$}
-  \State $P \gets B_k \gets \{\}$
+  \State $P \gets B_k \gets \{\}$ \label{alg:partition--initialize}
   \State $\rhd$ Populate vertex IDs with degree $\leq D_P$
-  \ForAll{$v \in V$ \textbf{in parallel}}
+  \ForAll{$v \in V$ \textbf{in parallel}} \label{alg:partition--less-begin}
     \State $B_k[v] \gets |G.out(v)| \leq D_P$
-  \EndFor
-  \State $B_k[|V|] \gets 0$
-  \State $exclusiveScan(B_k)$ \textbf{;} $N_P \gets B_k[|V|]$
-  \ForAll{$v \in V$ \textbf{in parallel}}
+  \EndFor \label{alg:partition--less-end}
+  \State $B_k[|V|] \gets 0$ \label{alg:partition--lscan-begin}
+  \State $exclusiveScan(B_k)$ \textbf{;} $N_P \gets B_k[|V|]$ \label{alg:partition--lscan-end}
+  \ForAll{$v \in V$ \textbf{in parallel}} \label{alg:partition--lpopulate-begin}
     \If{$|G.out(v)| \leq D_P$} $P[B_k[v]] \gets v$
     \EndIf
-  \EndFor
+  \EndFor \label{alg:partition--lpopulate-end}
   \State $\rhd$ Populate vertex IDs with degree $> D_P$
-  \ForAll{$v \in V$ \textbf{in parallel}}
+  \ForAll{$v \in V$ \textbf{in parallel}} \label{alg:partition--greater-begin}
     \State $B_k[v] \gets |G.out(v)| > D_P$
-  \EndFor
-  \State $exclusiveScan(B_k)$
-  \ForAll{$v \in V$ \textbf{in parallel}}
+  \EndFor \label{alg:partition--greater-end}
+  \State $exclusiveScan(B_k)$ \label{alg:partition--gscan}
+  \ForAll{$v \in V$ \textbf{in parallel}} \label{alg:partition--gpopulate-begin}
     \If{$|G.out(v)| > D_P$} $P[N_P + B_k[v]] \gets v$
     \EndIf
-  \EndFor
+  \EndFor \label{alg:partition--gpopulate-end}
   \State \ReturnInline{$\{P, N_P\}$} \label{alg:partition--return}
 \EndFunction
 \end{algorithmic}

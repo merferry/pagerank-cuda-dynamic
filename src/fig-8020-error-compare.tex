@@ -1,0 +1,21 @@
+\begin{figure*}[hbtp]
+  \centering
+  \subfigure[Overall result \textbf{(GPU)}]{
+    \label{fig:8020-error-compare--mean}
+    \includegraphics[width=0.38\linewidth]{out/8020-error-mean.pdf}
+  }
+  \subfigure[Results on each graph \textbf{(GPU)}]{
+    \label{fig:8020-error-compare--all}
+    \includegraphics[width=0.58\linewidth]{out/8020-error-all.pdf}
+  } \\[-1ex]
+  \subfigure[Overall result \textbf{(CPU)}]{
+    \label{fig:8020-error-compare--mean-cpu}
+    \includegraphics[width=0.38\linewidth]{out/8020-error-mean-cpu.pdf}
+  }
+  \subfigure[Results on each graph \textbf{(CPU)}]{
+    \label{fig:8020-error-compare--all-cpu}
+    \includegraphics[width=0.58\linewidth]{out/8020-error-all.pdf}
+  } \\[-1ex]
+  \caption{Error comparison of \textit{Static}, \textit{Naive-dynamic (ND)}, \textit{Dynamic Traversal (DT)}, our improved \textit{Dynamic Frontier (DF)}, and \textit{Dynamic Frontier with Pruning (DF-P)} PageRank on large (static) graphs with generated random batch updates, relative to a Reference Static PageRank (see Section \ref{sec:measurement}), using $L1$-norm. The size of batch updates range from $10^{-7} |E|$ to $0.1 |E|$ in multiples of $10$ (logarithmic scale), consisting of $80\%$ edge insertions and $20\%$ edge deletions to simulate realistic dynamic graph updates. The right subfigure depicts the error for each approach in relation to each graph, while the left subfigure showcases overall errors using geometric mean for consistent scaling across graphs. \su{TODO}}
+  \label{fig:8020-error-compare}
+\end{figure*}

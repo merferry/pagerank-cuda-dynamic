@@ -1,9 +1,13 @@
 \begin{figure*}[hbtp]
   \centering
-  \subfigure{
+  \subfigure[Runtime in seconds (logarithmic scale) with \textit{Hornet}, \textit{Gunrock}, \textit{Our} Static PageRank.]{
     \label{fig:compare--runtime}
     \includegraphics[width=0.98\linewidth]{out/compare-runtime.pdf}
+  } \\[-0ex]
+  \subfigure[Speedup of \textit{Our} Static PageRank (logarithmic scale) with respect to \textit{Hornet} and \textit{Gunrock}.]{
+    \label{fig:compare--speedup}
+    \includegraphics[width=0.98\linewidth]{out/compare-speedup.pdf}
   } \\[-2ex]
-  \caption{Runtime in seconds (log-scale) with \textit{Hornet}, \textit{Gunrock}, \textit{Our} Static PageRank for each graph in the dataset.}
+  \caption{Runtime in seconds and speedup (log-scale) with \textit{Hornet}, \textit{Gunrock}, \textit{Our} Static PageRank for each graph in the dataset.}
   \label{fig:compare}
 \end{figure*}

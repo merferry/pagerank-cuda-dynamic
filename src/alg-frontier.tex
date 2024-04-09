@@ -18,19 +18,19 @@
   \State $\rhd$ Initialize ranks
   \State $R \gets R_{new} \gets R^{t-1}$ \label{alg:frontier--initialize}
   \State $\rhd$ Partition vertex IDs by out- and in-degree 
-  \State $\{P, N_P\} \gets partition(G^t)$
-  \State $\{P', N'_P\} \gets partition(G^{t'})$
-  \State $\rhd$ Mark initial set of affected vertices
-  \State $\{\delta_V, \delta_N\} \gets initialAffected(G^t, \Delta^{t-}, \Delta^{t+})$
-  \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$
+  \State $\{P, N_P\} \gets partition(G^t)$ \label{alg:frontier--partition-begin} \Comment{Alg. \ref{alg:partition}}
+  \State $\{P', N'_P\} \gets partition(G^{t'})$ \label{alg:frontier--partition-end} \Comment{Alg. \ref{alg:partition}}
+  \State $\rhd$ Mark initial set of affected vertices \label{alg:frontier--mark-begin}
+  \State $\{\delta_V, \delta_N\} \gets initialAffected(G^t, \Delta^{t-}, \Delta^{t+})$ \Comment{Alg. \ref{alg:affected}}
+  \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$ \label{alg:frontier--mark-end} \Comment{Alg. \ref{alg:affected}}
   \State $\rhd$ Perform PageRank iterations
   \ForAll{$i \in [0 .. MAX\_ITERATIONS)$} \label{alg:frontier--compute-begin}
     \State $\delta_N \gets \{\}$
-    \State $updateRanks(\delta_V, \delta_N, R_{new}, R, G^t, P', N'_P)$
-    \State $\Delta R \gets l_{\infty}NormDelta(R_{new}, R)$ \textbf{;} $swap(R_{new}, R)$
-    \If{$\Delta R \leq \tau$} \textbf{break}
+    \State $updateRanks(\delta_V, \delta_N, R_{new}, R, G^t, P', N'_P)$ \Comment{Alg. \ref{alg:update}} \label{alg:frontier--update}
+    \State $\Delta R \gets l_{\infty}NormDelta(R_{new}, R)$ \textbf{;} $swap(R_{new}, R)$ \label{alg:frontier--error}
+    \If{$\Delta R \leq \tau$} \textbf{break} \label{alg:frontier--converged}
     \EndIf
-    \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$
+    \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$ \Comment{Alg. \ref{alg:affected}} \label{alg:frontier--remark}
   \EndFor \label{alg:frontier--compute-end}
   \State \ReturnInline{$R$} \label{alg:frontier--return}
 \EndFunction

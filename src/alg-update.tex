@@ -15,37 +15,37 @@
 
 \Function{updateRanks}{$\delta_V, \delta_N, R_{new}, R, G^t, P', N'_P$}
   \State $\rhd$ A thread-per-vertex kernel
-  \ForAll{$i \in [0, N'_P)$ \textbf{in parallel$_{thread/V}$}}
+  \ForAll{$i \in [0, N'_P)$ \textbf{in parallel$_{thread/V}$}} \label{alg:update--thread-begin}
     \State $v \gets P'[i]$
-    \If{\textbf{not} $\delta_V[v]$} \textbf{continue}
+    \If{\textbf{not} $\delta_V[v]$} \textbf{continue} \label{alg:update--affected}
     \EndIf
-      \State $c \gets 0$ \textbf{;} $d \gets |G^t.out(v)|$
-      \State $C_0 \gets (1 - \alpha)/|V^t|$
-      \ForAll{$u \in G^t.in(v)$}
-        \State $c \gets c + R[u] / |G^t.out(u)|$
-      \EndFor
-      \If{\textbf{is \textit{DF-P}}} \label{alg:frontier--formula-begin}
-        \State $r \gets 1/(1 - \alpha/d) * (C_0 + \alpha * (c - R[v]/d))$
-      \Else
-        \State $r \gets C_0 + \alpha * c$
-      \EndIf \label{alg:frontier--formula-end}
-      \State $\Delta r \gets |r - R[v]|$
-      \State $\rhd$ Prune $v$ if its relative rank change is small
-      \If{\textbf{is \textit{DF-P} and} $\Delta r / \max(r, R[v]) \leq \tau_p$}
-        \State $\delta_V[v] \gets 0$
-      \EndIf
-      \State $\rhd$ Expand frontier if relative rank change is large
-      \If{$\Delta r / \max(r, R[v]) > \tau_f$} \label{alg:frontier--remark-begin}
-        \State $\delta_N[v] \gets 0$
-      \EndIf
-      \State $\rhd$ Update rank of $v$
-      \State $R[v] \gets r$
-  \EndFor
+    \State $c \gets 0$ \textbf{;} $d \gets |G^t.out(v)|$ \label{alg:update--rank-begin}
+    \State $C_0 \gets (1 - \alpha)/|V^t|$
+    \ForAll{$u \in G^t.in(v)$}
+      \State $c \gets c + R[u] / |G^t.out(u)|$
+    \EndFor
+    \If{\textbf{is \textit{DF-P}}}
+      \State $r \gets 1/(1 - \alpha/d) * (C_0 + \alpha * (c - R[v]/d))$
+    \Else
+      \State $r \gets C_0 + \alpha * c$
+    \EndIf \label{alg:update--rank-end}
+    \State $\Delta r \gets |r - R[v]|$ \label{alg:update--change}
+    \State $\rhd$ Prune $v$ if its relative rank change is small
+    \If{\textbf{is \textit{DF-P} and} $\Delta r / \max(r, R[v]) \leq \tau_p$} \label{alg:update--prune-begin}
+      \State $\delta_V[v] \gets 0$
+    \EndIf \label{alg:update--prune-end}
+    \State $\rhd$ Expand frontier if relative rank change is large
+    \If{$\Delta r / \max(r, R[v]) > \tau_f$} \label{alg:update--expand-begin}
+      \State $\delta_N[v] \gets 0$
+    \EndIf \label{alg:update--expand-end}
+    \State $\rhd$ Update rank of $v$
+    \State $R[v] \gets r$ \label{alg:update--update}
+  \EndFor \label{alg:update--thread-end}
   \State $\rhd$ Similarly with block-per-vertex kernel
   \State $\rhd$ (using block-reduce, requires shared memory)
-  \ForAll{$i \in [N'_P, |V^t|)$ \textbf{in parallel$_{block/V}$}}
+  \ForAll{$i \in [N'_P, |V^t|)$ \textbf{in parallel$_{block/V}$}} \label{alg:update--block-begin}
     \State $\cdots$
-  \EndFor
+  \EndFor \label{alg:update--block-end}
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
