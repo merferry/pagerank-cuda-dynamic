@@ -61,8 +61,8 @@
 
 \begin{document}
 
-%% Full title of the paper.
-\title[Efficient GPU Implementation of Static and Incrementally Expanding DF-P PageRank for Dynamic Graphs]{Efficient GPU Implementation of Static and Incrementally Expanding DF-P PageRank for Dynamic Graphs}
+%% Full title of the paper (can use square brackets for per-page title).
+\title{Efficient GPU Implementation of Static and Incrementally Expanding DF-P PageRank for Dynamic Graphs}
 
 %% Short title to be used in page headers (optional).
 % \title[short title]{full title}
@@ -88,7 +88,7 @@
 
 %% Short summary of the work to be presented in the article.
 \begin{abstract}
-PageRank is a widely used centrality measure that "ranks" vertices in a graph by considering the connections and their importance. Efficiently updating PageRank for dynamic graphs is crucial in a number of applications, due to growing dataset sizes. However, traditional multicore CPUs have limited memory bandwidth, making them unfit for low computation-to-communication ratio algorithms like PageRank. GPUs, however, offer high-bandwidth memory and numerous lightweight cores with user-managed caches. This report introduces an efficient GPU implementation of Static PageRank and Dynamic Frontier with Pruning (DF-P) PageRank, which process only a subset of vertices likely to change ranks. On a server with a NVIDIA A100 GPU, our Static PageRank outperforms Hornet and Gunrock's PageRank implementations by $31\times$ and $5.9\times$ respectively, while being $24\times$ faster than our multicore Static PageRank. On top of the above, DF-P PageRank outperforms Static PageRank by $2.1\times$ on real-world dynamic graphs, and by $3.1\times$ on large static graphs with random batch updates.
+PageRank is a widely used centrality measure that "ranks" vertices in a graph by considering the connections and their importance. In this report, we first introduce one of the most efficient GPU implementations of Static PageRank, which recomputes PageRank scores from scratch. It uses a synchronous pull-based atomics-free PageRank computation, with the low and high in-degree vertices being partitioned and processed by two separate kernels. Next, we present our GPU implementation of incrementally expanding (and contracting) Dynamic Frontier with Pruning (DF-P) PageRank, which processes only a subset of vertices likely to change ranks. It is based on Static PageRank, and uses an additional partitioning between low and high out-degree vertices for incremental expansion of the set of affected vertices with two additional kernels. On a server with an NVIDIA A100 GPU, our Static PageRank outperforms Hornet and Gunrock's PageRank implementations by $31\times$ and $5.9\times$ respectively\ignore{, while being $24\times$ faster than our multicore Static PageRank}. On top of the above, DF-P PageRank outperforms Static PageRank by $2.1\times$ on real-world dynamic graphs, and by $3.1\times$ on large static graphs with random batch updates.
 \end{abstract}
 
 
