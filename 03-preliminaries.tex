@@ -15,15 +15,33 @@ Dead ends, also referred to as dangling vertices, present a significant challeng
 
 
 
+\subsection{Fundamentals of a GPU}
+
+The fundamental building block of NVIDIA GPUs is the Streaming Multiprocessor (SM). Each SM consists of multiple CUDA cores, which are responsible for executing parallel threads. SMs also include shared memory, registers, and special function units. The number of SMs varies across different GPU models, and each SM operates independently, executing multiple threads in parallel \cite{cuda-sanders10, gpu-nickolls10}.
+
+The memory hierarchy of NVIDIA GPUs includes global memory, shared memory, and local memory. Global memory is the largest and slowest memory type, providing high-capacity storage for data. Shared memory is a fast, low-latency memory that is shared among threads within an SM, facilitating efficient data sharing and communication. It is used to store data that is frequently accessed by multiple threads, which can improve performance by reducing the number of memory accesses. Local memory is per-thread private memory used to store variables that do not fit in registers \cite{cuda-sanders10, gpu-nickolls10}.
+
+\ignore{\paragraph{CUDA Cores}}
+
+\ignore{CUDA cores are the primary execution units within an SM. These cores are responsible for executing individual threads in parallel. Each CUDA core is capable of performing arithmetic and logic operations, as well as handling memory access and control flow. The number of CUDA cores per SM varies across different GPU architectures, with newer generations featuring an increased number of cores \cite{cuda-sanders10, gpu-nickolls10}.}
+
+\ignore{\paragraph{Behavioral fundamentals}}
+
+Threads on a GPU are structured differently from those on a multicore CPU, organized into a hierarchy of warps, thread blocks, and grids. A warp comprises threads executing instructions in synchronous manner, i.e., in lockstep. NVIDIA GPUs typically have a warp size of 32 threads. Thread blocks, on the other hand, are collections of threads executing on the same SM. Within a thread block, warps execute in lockstep, with the SM scheduling alternate warps if any threads stall, such as during memory requests. All threads within a block can communicate through a user-managed cache, known as shared memory, which is private to each SM. Lastly, a grid encompasses multiple thread blocks, each functioning independently. Grids offer a higher-level structure for managing parallelism, optimizing GPU resource utilization. Thread blocks within a grid communicate solely through global memory\ignore{, which, although slower than shared memory, facilitates data exchange between different blocks}.
+
+
+
+
+
 \subsection{Dynamic Graphs}
 \label{sec:about-dynamic}
 
 A dynamic graph can be construed as a succession of graphs, where $G^t(V^t, E^t)$ denotes the graph at time step $t$. The transitions between successive time steps $t-1$ and $t$, from $G^{t-1}(V^{t-1}, E^{t-1})$ to $G^t(V^t, E^t)$, can be denoted as a batch update $\Delta^t$ at time step $t$. This update encompasses a collection of edge deletions $\Delta^{t-}$, defined as $\{(u, v)\ |\ u, v \in V\} = E^{t-1} \setminus E^t$, and a set of edge insertions $\Delta^{t+}$, defined as $\{(u, v)\ |\ u, v \in V\} = E^t \setminus E^{t-1}$.
 
 
-\paragraph{Interleaving graph updates with computation:}
+\ignore{\paragraph{Interleaving graph updates with computation:}}
 
-We consider graph updated to be batched, with changes to the graph structure and the algorithm execution being interleaved, permitting only one writer on the graph structure concurrently at any given time. If parallel updating of the graph structure is necessary during computation, a graph snapshot is needed to be obtained, upon which the computation may be performed (isolating it from the graphs updates). See for instance, the Aspen graph processing framework which reduces snapshot acquisition costs \cite{graph-dhulipala19}.
+\ignore{We consider graph updated to be batched, with changes to the graph structure and the algorithm execution being interleaved, permitting only one writer on the graph structure concurrently at any given time. If parallel updating of the graph structure is necessary during computation, a graph snapshot is needed to be obtained, upon which the computation may be performed (isolating it from the graphs updates). See for instance, the Aspen graph processing framework which reduces snapshot acquisition costs \cite{graph-dhulipala19}.}
 
 
 

@@ -1,11 +1,47 @@
+\subsection{Our GPU-based Static PageRank}
+\label{sec:static}
+
+We first discuss our GPU implementation of Static PageRank. Its psuedocode is given in Algorithm \ref{alg:static}. The explanation of the psuedocode is given in Section \ref{sec:static-impl}.
+
+\paragraph{Copying data to the device:}
+
+We begin by copying the CSR representation of the transpose of the current graph $G^{t'}$ to the GPU.
+
+\paragraph{Partitioning vertices into low-degree and high-degree sets:}
+
+We employ a pair of kernels, namely a thread-per-vertex kernel and a block-per-vertex kernel, for rank computation on the GPU. For this, we partition the vertex IDs for the two kernels by their in-degree. The thread-per-vertex kernel handles vertices with low in-degrees, while the block-per-vertex kernel computes ranks of high in-degree vertices. Using two different kernels allows us to improve processing performance for high-degree vertices, while minimizing thread divergence for low-degree vertices. The psuedocode for partitioning\ignore{vertex IDs} is given in Algorithm \ref{alg:partition}, and is explained in Section \ref{sec:partition}.
+
+\paragraph{Rank computation of each vertex:}
+
+We find that, unlike on multicore CPUs, employing a synchronous implementation of the PageRank algorithm, utilizing two separate rank vectors, yields superior performance. Consequently, we opt for a \textit{synchronous} implementation of the PageRank algorithm. During the rank computation phase in each iteration, we employ two distinct kernels. The \textit{thread-per-vertex} kernel manages vertices with low in-degree, assigning one thread per vertex to independently update each vertex's rank in a sequential manner. Conversely, the \textit{block-per-vertex} kernel allocates a thread block per vertex. Within each thread block, threads compute the rank contribution of in-neighbors to the vertex in a strided manner. These partial rank contributions are stored in shared memory, and a block reduction (summation) operation is performed to obtain the net rank contribution. Subsequently, the first thread in the thread block updates the rank of the\ignore{respective} vertex.\ignore{To ensure efficient workload distribution, the vertex IDs between the two kernels are partitioned based on in-degree. This strategy ensures that the workload assigned to each thread is proportional to the in-degree of its corresponding vertex during the rank computation phase, thereby minimizing thread divergence.}
+
+\ignore{We observe that, unlike on multicore CPUs, a synchronous implementation of the PageRank algorithm, which uses two separate rank vectors offers better performance than an asynchronous approach (which performs well on multicore CPUs). Accordingly, we use a \textit{synchronous} implementation of the PageRank algorithm. For the rank computation phase in each iteration, we use two different kernels --- a thread-per-vertex kernel for processing vertices with low in-degree, and a block-per-vertex kernel for processing high in-degree vertices. The \textit{thread-per-vertex} kernel schedules one thread per vertex, and updated the rank of each vertex independently (in a sequential manner). On the other hand, the \textit{block-per-vertex} kernels schedules a thread block per vertex, where each thread in a thread block computes the rank contribution of in-neighbors to the vertex in a strided fashion. These partial rank contributions are the written to shared memory, and a block reduce (sum) is performed to obtained the net rank contribution. The first thread in the thread block then updates rank of the given vertex. The vertex IDs between the two kernels are partitioned by in-degree (the work to be performed by each thread is proportional to the in-degree of each vertex during the rank computation phase), and hence, the thread divergence is expected to be minimal.}
+
+\paragraph{Convergence detection:}
+
+To determine if the ranks of vertices have converged, we calculate the $L_\infty$-norm of the difference between the current and previous ranks. If this value is below the specified iteration tolerance $\tau$, the algorithm terminates, indicating convergence. If not, we swap the current and previous ranks and proceed to the next iteration. The calculation of the $L_\infty$-norm involves two kernels. The first kernel computes the $L_\infty$-norm of the rank differences for each thread block in a grid and stores the results in a temporary buffer. The second kernel computes the net $L_\infty$-norm of the results in the buffer, which is then transferred to the CPU.
+
+
+
+
+\subsection{Our Static PageRank implementation}
+\label{sec:static-impl}
+
+Algorithm \ref{alg:static} outlines the psuedocode of our GPU-based Static PageRank. It takes as input the transpose of the current graph snapshot $G^{t'}$, and returns the computed rank vector $R$.
+
+The algorithm begins by initializing the rank vectors $R$ and $R_{new}$, where each vertex's initial rank is set to $1/|V^{t'}|$ (lines \ref{alg:static--initialize-begin}-\ref{alg:static--initialize-end}). We then partition the vertex IDs in $P'$ based on their in-degree (line \ref{alg:static--partition}). This partitioning step is crucial for efficient computation on the GPU. Next, in lines \ref{alg:static--compute-begin}-\ref{alg:static--compute-end}, PageRank iterations are performed. Within each iteration, the ranks are updated using the \texttt{updateRanks()} function (line \ref{alg:static--update}), which computes the updated PageRank scores $R_{new}$ for each vertex based on the previous iteration's ranks $R$ (synchronous). After updating the ranks, we calculate the $L_\infty$-norm difference $\Delta R$ between the current $R_{new}$ and previous ranks $R$ to check for convergence (line \ref{alg:static--error}). If the change in ranks falls below the specified tolerance $\tau$, the algorithm terminates (line \ref{alg:static--converged}). Finally, the algorithm returns the converged rank vector $R$ (line \ref{alg:static--return}).
+
+Algorithm \ref{alg:static} uses a pull-based approach for PageRank computation, where each vertex's rank is updated through a single write by a thread. This is in contrast to a push-based approach, where each thread calculates and sums the outgoing PageRank contribution of its vertex to its neighbors, necessitating atomic updates \cite{verstraaten2015quantifying}. We find this to be more efficient and employ it for all implementations \cite{sahu2024df}. We also employ an synchronous implementation of Static PageRank, using two separate rank vectors, which we observe to perform better than an asynchronous implementation.
+
+
+
+
+\subsection{Our GPU-based Dynamic Frontier with Pruning (DF-P) PageRank}
+\label{sec:frontier}
+
 When dealing with a batch update comprising edge deletions $(u, v) \in \Delta^{t-}$ and insertions $(u, v) \in \Delta^{t+}$, if the total update size $|\Delta^{t-} \cup \Delta^{t+}|$ is relatively small compared to the total edge count $|E|$, only a small fraction of vertices are expected to undergo rank changes. To handle this, our earlier work proposed \textbf{Dynamic Frontier (DF)} and \textbf{Dynamic Frontier with Pruning (DF-P)} approaches, which employ an incremental process to identify affected vertices and update their ranks. Our research showed that DF/DF-P PageRank outperformed Static and Dynamic Traversal (DT) PageRank by $5.2\times$/$15.2\times$ and $1.3\times$/$3.5\times$\ignore{respectively} on real-world dynamic graphs, and by $7.2\times$/$9.6\times$ and $4.0\times$/$5.6\times$ on large graphs with random batch updates \cite{sahu2024df}.
 
 Unfortunately, multicore CPUs have limited memory bandwidth and parallelism, making them unsuitable for graph algorithms like PageRank, which have a low computation-to-communication ratio. In contrast, GPUs offer high-bandwidth memory, connected in close proximity to thousands of lightweight cores with user-managed caches. Moreover, GPU hardware is designed to switch running threads at no cost to support memory access latency hiding. When appropriately designed, graph algorithms can significantly outperform CPU-based implementations on GPUs. This makes a GPU implementation of DF and DF-P PageRank attractive. In this section, we describe the design of DF and DF-P PageRank for GPUs.
-
-
-
-\subsection{Design of Dynamic Frontier (DF) and Dynamic Frontier with Pruning (DF-P) PageRank for GPUs}
-\label{sec:frontier}
 
 \paragraph{Copying data to the device:}
 
@@ -79,12 +115,16 @@ With the first technique, which we refer to as \textit{Don't Partition}, we do n
 Results, as shown in Figure \ref{fig:adjust-partition}, indicate that the \textit{Partition $G$, $G'$} approach performs the best. Note that partitioning the vertex IDs by out-degree, i.e., \textit{Partition $G$}, is useful for incremental marking of affected vertices, but comes with added runtime cost --- hence the small improvement in performance when moving from \textit{Partition $G'$} to \textit{Partition $G$, $G'$}.
 
 \input{src/fig-adjust-partition}
+\input{src/alg-static}
 \input{src/alg-frontier}
 \input{src/alg-update}
 \input{src/alg-partition}
 \input{src/alg-affected}
 
 
+
+\subsubsection{Explanation of Static PageRank}
+\label{sec:static-impl}
 
 
 \subsection{Our DF* PageRank implementation}
