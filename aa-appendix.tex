@@ -62,7 +62,9 @@ Hence, the closed-loop formula for calculating the rank of a vertex $v$ in DF-P 
 
 
 
+
 \subsection{Indirect Comparison with State-of-the-art PageRank Implementations (Static)}
+\label{sec:static-comparison-indirect}
 
 We now indirectly compare the performance of our GPU implementation of Static PageRank with other similar state-of-the-art implementations. Chen et al. \cite{chen2022atos} present Atos, a state-of-the-art task-parallel GPU scheduler for graph analytics. They say that in Gunrock and other frameworks, each frontier in a graph sweep is launched as a separate GPU kernel in the BSP model. This may result in insufficient parallelism, uneven finish times, and high kernel launch overhead for small frontiers. In contrast, Chen et al. present a persistent task scheduler which runs continuously to minimize kernel launch overhead, and also support asynchronous execution. For PageRank, they present a push-based asynchronous PageRank (requires many atomic ops) that uses a frontier to keep track of vertices that need to be processed in the next iteration. They use a queue to keep track fo the frontier (also requires atomic ops). Their CUDA kernel appears to be barrier-free. Their frontier concept is similar to ours \cite{sahu2024df}, but they do not use it for Dynamic PageRank. Chen et al. are able to achieve $3.2\times$ speedup over Gunrock on the \textit{indochina-2004} graph (see Table $1$ of their paper \cite{chen2022atos}). However, on the same graph, we achieve $24.4\times$ speedup over Gunrock (see Figure \ref{fig:compare--speedup} in this report).
 

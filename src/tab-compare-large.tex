@@ -1,6 +1,6 @@
 \begin{table}[hbtp]
   \centering
-  \caption{List of 5 real-world dynamic graphs, obtained from the Stanford Large Network Dataset Collection \cite{snapnets}. Here, $|V|$ is the number of vertices, $|E_T|$ the number of temporal edges, and $|E|$ the number of static edges (with no duplicates).}
+  \caption{Speedup of our GPU implementation of Static PageRank compared to other state-of-the-art implementations. Direct comparisons are based on running the given implementation on our server, while indirect comparisons (denoted with a $*$) involve comparing results obtained by the given implementation relative to a common reference (Hornet/Gunrock).}
   \label{tab:compare-large}
   \begin{tabular}{|c|c||c|}
     \toprule
@@ -8,8 +8,8 @@
     \textbf{Published} &
     \textbf{Our Speedup} \\
     \midrule
-    Hornet \cite{busato2018hornet} & 2018$^\#$ & $31\times$ \\ \hline
-    Gunrock \cite{wang2016gunrock} & 2016$^\#$ & $5.9\times$ \\ \hline
+    Hornet \cite{busato2018hornet} & 2018 & $31\times$ \\ \hline
+    Gunrock \cite{wang2016gunrock} & 2016 & $5.9\times$ \\ \hline
     Galois with Gluon \cite{dathathri2018gluon} & 2018 & $448\times^*$ \\ \hline
     Tigr \cite{nodehi2018tigr} & 2018 & $40\times^*$ \\ \hline
     Grus \cite{wang2021grus} & 2021 & $7.2\times^*$ \\ \hline
