@@ -8,62 +8,45 @@
 
 \section{Appendix}
 
-\subsection{Derivation of Closed loop formula for Rank calculation towards Dynamic Frontier with Pruning (DF-P) PageRank}
-\label{sec:pr-prune-derivation}
 
-We proceed to derive the closed-loop formula for rank calculation with DF-P PageRank. As outlined in Sections \ref{sec:dataset} and \ref{sec:batch-generation}, self-loops are added to each vertex to circumvent the need for a global teleport rank computation in every iteration, thus reducing overhead. In DF-P PageRank, our aim is to skip the computation of ranks for vertices likely to have already converged. However, the existence of self-loops causes a delay in vertex rank convergence due to the immediate recursive nature they introduce. For instance, if the ranks of all in-neighbors of a vertex have already converged, the presence of self-loops inhibits the convergence of the vertex's rank in a single iteration. Nevertheless, we can mitigate this convergence issue by employing a closed-loop formula for the rank calculation of each vertex.
 
-To achieve this, let us denote $r_0$ as the initial rank of a vertex $v$, $\alpha$ as the damping factor, $c = \sum_{u \in G.in(v)\ |\ u \neq v} \frac{R[u]}{|G.out(u)|}$ as the total rank contribution from its in-neighbors (excluding itself), $d = |G.out(v)|$ as its out-degree, and $C_0$ as $1 - \alpha/|V|$. Given the assumption that the rank contribution of its in-neighbors remains constant, the rank of $v$ after one iteration can be expressed as:
+\subsection{Updating ranks of vertices in parallel}
+\label{sec:update}
 
-\begin{flalign*}
-  r_1 & = \alpha (c + \frac{r_0}{d}) + C_0 && \\
-      & = \alpha c + \alpha \frac{r_0}{d} + C_0 && \\
-\end{flalign*}
+Algorithm \ref{alg:update} provides a psuedocode for updating the ranks of vertices in parallel. Here, the function \texttt{updateRanks()} takes as input the set of affected vertices $\delta_V$, affected neighbor vertices $\delta_N$, the previous and current rank vectors $R$ and $R_{new}$, respectively, the current input graph $G^t$, partitioned vertex IDs $P'$ (low in-degree vertices come first), and the number of vertices with low in-degree $N'_P$. It also requires parameters such as the damping factor $\alpha$, frontier tolerance $\tau_f$, and prune tolerance $\tau_p$.
 
-\noindent
-After the second iteration, the rank of the vertex would be:
+The algorithm operates in two phases: a thread-per-vertex kernel (for low degree vertices) and a block-per-vertex kernel (for high degree vertices). In the \textit{thread-per-vertex kernel} (lines \ref{alg:update--thread-begin}-\ref{alg:update--thread-end}), we use each thread to process each low degree vertex in parallel, iterating over the partitioned vertex IDs ($P'$). For each vertex $v$, if it's not marked as affected, we skip it (line \ref{alg:update--affected}). Otherwise, we compute the new rank $r$ based on the incoming edges and ranks of neighboring vertices (lines \ref{alg:update--rank-begin}-\ref{alg:update--rank-end}). Depending on whether DF or DF-P PageRank is selected, we compute ranks using either Equation \ref{eq:pr} or \ref{eq:pr-prune}, respectively. Next, we compute the change in rank $\Delta r$ of the current vertex $v$ from its previous iteration (line \ref{alg:update--change}). If the relative change in rank of $v$, i.e., $\Delta r / \max(r, R[v])$, is within the prune tolerance $\tau_p$, we perform pruning by marking $v$ and no longer affected. However, if the relative change in rank of $v$ is above the frontier tolerance $\tau_f$, we mark the vertices whose neighbors must be incrementally marked as affected (the incremental marking of affected vertices is performed at a later point of time, using the \texttt{expandAffected()} function (Algorithm \ref{alg:affected}). Finally, we update the rank of vertex $v$ in the $R$ vector. In the \textit{block-per-vertex kernel} (lines \ref{alg:update--block-begin}-\ref{alg:update--block-end}), we use each thread block to process each high degree vertex in parallel, utilizing block-level parallelism. It involves similar operations as the thread-per-vertex kernel, but uses block-reduce operations and shared memory.
 
-\begin{flalign*}
-  r_2 & = \alpha (c + \frac{r_1}{d}) + C_0 && \\
-      & = \alpha (c + \frac{1}{d} (\alpha c + \alpha \frac{r_0}{d} + C_0)) + C_0 && \\
-      & = \alpha c + \alpha^2 \frac{c}{d} + \alpha^2 \frac{r_0}{d^2} + \alpha \frac{C_0}{d} + C_0 &&
-\end{flalign*}
 
-\noindent
-Following the third iteration, the vertex's rank would be:
+\subsection{Parallel vertex partitioning by degree}
+\label{sec:partition}
 
-\begin{flalign*}
-  r_3 & = \alpha (c + \frac{r_2}{d}) + C_0 && \\
-      & = \alpha (c + \frac{1}{d} (\alpha c + \alpha^2 \frac{c}{d} + \alpha^2 \frac{r_0}{d^2} + \alpha \frac{C_0}{d} + C_0) + C_0 && \\
-      & = \alpha c + \alpha^2 \frac{c}{d} + \alpha^3 \frac{c}{d^2} + \alpha^3 \frac{r_0}{d^3} + \alpha^2 \frac{C_0}{d^2} + \alpha \frac{C_0}{d} + C_0 && \\
-\end{flalign*}
+Algorithm \ref{alg:partition} outlines the psuedocode for parallel vertex partitioning by degree. It aims to split the vertices of the input graph $G(V, E)$ into two groups based on their degree: low-degree vertices and high-degree vertices. The algorithm provides partitioned vertex IDs $P$ with low-degree vertices being listed first, along with the number of vertices with low degree $N_P$, as its output.
 
-\noindent
-Expanding this to an infinite number of iterations, the vertex's final rank would be:
+In the function \texttt{partition()}, we start by initializing an empty buffer $B_k$ and the set of partitioned vertex IDs $P$ (line \ref{alg:partition--initialize}). We then proceed to populate $B_k$ with boolean values indicating whether each vertex has a degree less than or equal to a specified threshold $D_P$ (lines \ref{alg:partition--less-begin}-\ref{alg:partition--less-end}). Afterward, we perform an exclusive prefix sum operation on $B_k$ to determine the number of low-degree vertices $N_P$ (lines \ref{alg:partition--lscan-begin}-\ref{alg:partition--lscan-end}). In the subsequent loop, we assign low-degree vertices to the appropriate positions in the partitioned vertex IDs array $P$ (lines \ref{alg:partition--lpopulate-begin}-\ref{alg:partition--lpopulate-end}). We then repeat a similar process for high-degree vertices. We populate $B_k$ with boolean values indicating whether each vertex has a degree greater than $D_P$ (lines \ref{alg:partition--greater-begin}-\ref{alg:partition--greater-end}), perform another exclusive prefix sum operation on $B_k$ (line \ref{alg:partition--gscan}), and assign high-degree vertices to the appropriate positions in $P$ (lines \ref{alg:partition--gpopulate-begin}-\ref{alg:partition--gpopulate-end}). Finally, we return the partitioned vertex IDs $P$ along with the number of low-degree vertices $N_P$ (line \ref{alg:partition--return}).
 
-\begin{flalign*}
-  r_\infty & = \frac{\alpha c}{1 - \alpha / d} + \frac{C_0}{1 - \alpha / d} && \\
-           & = \frac{1}{1 - \alpha / d} (\alpha c + C_0)
-\end{flalign*}
 
-\noindent
-Hence, the closed-loop formula for calculating the rank of a vertex $v$ in DF-P PageRank is:
+\subsection{Parallel marking of affected vertices}
+\label{sec:affected}
 
-\begin{flalign}
-  R[v] & = \frac{1}{1 - \alpha / |G.out(v)|} \left(\alpha K + \frac{1 - \alpha}{|V|}\right) && \\
-    \text{where, } K & = \left(\sum_{u \in G.in(v)} \frac{R[u]}{|G.out(u)|}\right) - \frac{R[v]}{|G.out(v)|}
-\end{flalign}
+Algorithm \ref{alg:affected} presents the psuedocode for parallel marking of affected vertices, consisting of two functions: \texttt{initialAffected()} and \texttt{expandAffected()}.
+
+The \texttt{initialAffected()} function performs an initial marking step of DF and DF-P PageRank. It takes as input the current graph snapshot $G^t$ and the sets of edge deletions $\Delta^{t-}$ and insertions $\Delta^{t+}$. Here, we first initialize two arrays, $\delta_V$ and $\delta_N$, which represent whether each vertex and its neighbors are affected, respectively (line \ref{alg:affected--iinitialize}). Next, for each edge deletion in $\Delta^{t-}$, we mark both the source and target vertices as affected (lines \ref{alg:affected--idel-begin}-\ref{alg:affected--idel-end}). Similarly, for each edge insertion in $\Delta^{t+}$, we mark the source vertex as affected (lines \ref{alg:affected--iins-begin}-\ref{alg:affected--iins-end}). Finally, we return $\delta_V$ and $\delta_N$ (line \ref{alg:affected--ireturn}).
+
+The \texttt{expandAffected()} function propagates the affected status to neighboring vertices. It takes as input flags indicating whether each vertex is affected $\delta_V$ or its neighbors are affected $\delta_N$, the current graph snapshot $G^t$, partitioned vertex IDs $P$ with low degree vertices placed first, and the number of vertices with low degree $N_P$. This algorithm also operates in two phases: a thread-per-vertex kernel (for low degree vertices) and a block-per-vertex kernel (for high degree vertices). In the \textit{thread-per-vertex kernel} (lines \ref{alg:affected--ethread-begin}-\ref{alg:affected--ethread-end}), we use each thread to process each low degree vertex in parallel by iterating through the partitioned vertex IDs array $P$. For each vertex $u$ marked as affected in $\delta_N$, we invoke the \texttt{markNeighbors()} function to mark its neighbors as affected in $\delta_V$ (line \ref{alg:affected--etmark}). In the \textit{block-per-vertex kernel} (lines \ref{alg:affected--eblock-begin}-\ref{alg:affected--eblock-end}), we use each thread block to process each vertex in parallel, utilizing block-level parallelism. It involves similar operations as the thread-per-vertex kernel.
+
 
 \input{src/tab-dataset-large}
 \input{src/fig-temporal-compare}
 \input{src/fig-8020-runtime-compare}
 \input{src/fig-8020-runtime-compare}
 
+\input{src/alg-update}
+\input{src/alg-partition}
+\input{src/alg-affected}
 
 
 
-\subsection{Paritioning}
-\label{sec:partition}
 
 \subsection{Indirect Comparison with State-of-the-art PageRank Implementations (Static)}
 \label{sec:static-comparison-indirect}
