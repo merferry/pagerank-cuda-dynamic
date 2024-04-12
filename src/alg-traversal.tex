@@ -1,0 +1,47 @@
+\begin{algorithm}[!hbt]
+\caption{Our GPU-based Dynamic Traversal (DT) PageRank.}
+\label{alg:traversal}
+\begin{algorithmic}[1]
+\Require{$G^t(V^t, E^t), G^{t'}$: Current input graph, and its transpose}
+\Require{$\Delta^{t-}, \Delta^{t+}$: Edge deletions and insertions (input)}
+\Require{$R^{t-1}$: Previous rank vector}
+\Require{$R, R_{new}$: Rank vector in the previous, current iteration}
+\Ensure{$\delta_V, \delta_N$: Is a vertex, or neighbors of a vertex affected}
+\Ensure{$P, P'$: Partitioned vertex IDs --- low out-, in-degree first }
+\Ensure{$N_P, N'_P$: Number of vertices with low out-, in-degree}
+\Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
+\Ensure{$\tau$: Iteration tolerance}
+
+\Statex
+
+\Function{dynamicTraversal}{$G^t, G^{t'}, \Delta^{t-}, \Delta^{t+}, R^{t-1}$}
+  \State $\rhd$ Initialize ranks
+  \State $R \gets R_{new} \gets R^{t-1}$ \label{alg:traversal--initialize}
+  \State $\rhd$ Partition vertex IDs by out- and in-degree 
+  \State $\{P, N_P\} \gets partition(G^t)$ \label{alg:traversal--partition-begin} \Comment{Alg. \ref{alg:partition}}
+  \State $\{P', N'_P\} \gets partition(G^{t'})$ \label{alg:traversal--partition-end} \Comment{Alg. \ref{alg:partition}}
+  \State $\rhd$ Mark all affected vertices \label{alg:traversal--mark-begin}
+  \State $\{\delta_V, \delta_N\} \gets initialAffected(G^t, \Delta^{t-}, \Delta^{t+})$ \Comment{Alg. \ref{alg:affected}}
+  \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$ \label{alg:traversal--mark-end} \Comment{Alg. \ref{alg:affected}}
+  \State $N_A \gets countOnes(\delta_V)$ \textbf{;} $\delta_N \gets \delta_V$
+  \While{$true$}
+    \State $\delta_F \gets \{\}$
+    \State $expandAffected(\delta_V, \delta_N, G^t, P, N_P)$ \Comment{Alg. \ref{alg:affected}}
+    \State $\delta_V \gets \delta_V$ \textbf{OR} $\delta_F$ \textbf{;} $swap(\delta_N, \delta_F)$
+    \State $N_{A'} \gets countOnes(\delta_V)$
+    \If{$N_{A'} = N_A$} \textbf{break}
+    \EndIf
+    \State $N_A \gets N_{A'}$
+  \EndWhile
+  \State $\rhd$ Perform PageRank iterations
+  \ForAll{$i \in [0 .. MAX\_ITERATIONS)$} \label{alg:traversal--compute-begin}
+    \State $\delta_N \gets \{\}$
+    \State $updateRanks(\delta_V, \cdots, R_{new}, R, G^t, P', N'_P)$ \Comment{Alg. \ref{alg:update}} \label{alg:traversal--update}
+    \State $\Delta R \gets l_{\infty}NormDelta(R_{new}, R)$ \textbf{;} $swap(R_{new}, R)$ \label{alg:traversal--error}
+    \If{$\Delta R \leq \tau$} \textbf{break} \label{alg:traversal--converged}
+    \EndIf
+  \EndFor \label{alg:traversal--compute-end}
+  \State \ReturnInline{$R$} \label{alg:traversal--return}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}

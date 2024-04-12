@@ -1,0 +1,30 @@
+\begin{algorithm}[!hbt]
+\caption{Our GPU-based Naive-dynamic (ND) PageRank.}
+\label{alg:naive}
+\begin{algorithmic}[1]
+\Require{$G^{t'}(V^{t'}, E^{t'})$: Transpose of current input graph}
+\Require{$R^{t-1}$: Previous rank vector}
+\Require{$R, R_{new}$: Rank vector in the previous, current iteration}
+\Ensure{$P'$: Partitioned vertex IDs, low in-degree first }
+\Ensure{$N'_P$: Number of vertices with low in-degree}
+\Ensure{$\Delta R$: $L\infty$-norm between previous and current ranks}
+\Ensure{$\tau$: Iteration tolerance}
+
+\Statex
+
+\Function{naiveDynamic}{$G^{t'}, R^{t-1}$}
+  \State $\rhd$ Initialize ranks
+  \State $R \gets R_{new} \gets R^{t-1}$ \label{alg:naive--initialize}
+  \State $\rhd$ Partition vertex IDs by in-degree 
+  \State $\{P', N'_P\} \gets partition(G^{t'})$ \label{alg:naive--partition} \Comment{Alg. \ref{alg:partition}}
+  \State $\rhd$ Perform PageRank iterations
+  \ForAll{$i \in [0 .. MAX\_ITERATIONS)$} \label{alg:naive--compute-begin}
+    \State $updateRanks(\cdots, \cdots, R_{new}, R, G^{t'}, P', N'_P)$ \Comment{Alg. \ref{alg:update}} \label{alg:naive--update}
+    \State $\Delta R \gets l_{\infty}NormDelta(R_{new}, R)$ \textbf{;} $swap(R_{new}, R)$ \label{alg:naive--error}
+    \If{$\Delta R \leq \tau$} \textbf{break} \label{alg:naive--converged}
+    \EndIf
+  \EndFor \label{alg:naive--compute-end}
+  \State \ReturnInline{$R$} \label{alg:naive--return}
+\EndFunction
+\end{algorithmic}
+\end{algorithm}
