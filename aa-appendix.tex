@@ -36,10 +36,9 @@ The \texttt{initialAffected()} function performs an initial marking step of DF a
 The \texttt{expandAffected()} function propagates the affected status to neighboring vertices. It takes as input flags indicating whether each vertex is affected $\delta_V$ or its neighbors are affected $\delta_N$, the current graph snapshot $G^t$, partitioned vertex IDs $P$ with low degree vertices placed first, and the number of vertices with low degree $N_P$. This algorithm also operates in two phases: a thread-per-vertex kernel (for low degree vertices) and a block-per-vertex kernel (for high degree vertices). In the \textit{thread-per-vertex kernel} (lines \ref{alg:affected--ethread-begin}-\ref{alg:affected--ethread-end}), we use each thread to process each low degree vertex in parallel by iterating through the partitioned vertex IDs array $P$. For each vertex $u$ marked as affected in $\delta_N$, we invoke the \texttt{markNeighbors()} function to mark its neighbors as affected in $\delta_V$ (line \ref{alg:affected--etmark}). In the \textit{block-per-vertex kernel} (lines \ref{alg:affected--eblock-begin}-\ref{alg:affected--eblock-end}), we use each thread block to process each vertex in parallel, utilizing block-level parallelism. It involves similar operations as the thread-per-vertex kernel.
 
 
-\input{src/tab-dataset-large}
 \input{src/fig-temporal-compare}
 \input{src/fig-8020-runtime-compare}
-\input{src/fig-8020-runtime-compare}
+\input{src/fig-8020-error-compare}
 
 \input{src/alg-update}
 \input{src/alg-partition}
